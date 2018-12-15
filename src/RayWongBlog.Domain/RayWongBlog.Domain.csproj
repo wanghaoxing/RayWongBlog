@@ -4,4 +4,12 @@
     <TargetFramework>netcoreapp2.1</TargetFramework>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Folder Include="Interfaces\Repositorys\" />
+    <Folder Include="Interfaces\Supervisors\" />
+    <Folder Include="Models\Entitys\" />
+    <Folder Include="Models\ViewModels\" />
+    <Folder Include="Supervisors\" />
+  </ItemGroup>
+
 </Project>
