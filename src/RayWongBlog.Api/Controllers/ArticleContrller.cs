@@ -36,17 +36,28 @@ namespace RayWongBlog.Api.Controllers
         [HttpGet]
         public async Task<IActionResult> Get()
         {
-            var list = await _articleRepository.GetAllArticles();
+            var list = await _articleRepository.GetAllArticlesAsync();
             //_logger.LogInformation("test");
             //throw new Exception("fsf");
             var viewList = _mapper.Map<IEnumerable<Article>, IEnumerable<ArticleViewModel>>(list);
             return Ok(viewList);
         }
 
+        [HttpGet("{id}")]
+        public async Task<IActionResult> Get(int id)
+        {
+            var article = await _articleRepository.GetArticleByIdAsync(id);
+            if (article == null)
+            {
+                return NotFound();
+            }
+            var articleViewModel = _mapper.Map<Article, ArticleViewModel>(article);
+            return Ok(articleViewModel);
+        }
         [HttpPost]
         public async Task<IActionResult> Post()
         {
-            await _articleRepository.AddArtice(new Article
+            await _articleRepository.AddArticeAsync(new Article
             {
                 Author = "admin",
                 Content = "test",

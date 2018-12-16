@@ -18,14 +18,19 @@ namespace RayWongBlog.Infrastructure.Repositorys
             _context = context;
         }
 
-        public async Task AddArtice(Article article)
+        public async Task AddArticeAsync(Article article)
         {
             await _context.Articles.AddAsync(article);
         }
 
-        public async Task<IEnumerable<Article>> GetAllArticles()
+        public async Task<IEnumerable<Article>> GetAllArticlesAsync()
         {
             return await _context.Articles.ToListAsync();
+        }
+
+        public async Task<Article> GetArticleByIdAsync(int id)
+        {
+            return await _context.Articles.FindAsync(id);
         }
     }
 }

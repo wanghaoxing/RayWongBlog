@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace RayWongBlog.Api.Enxtensions
@@ -14,7 +15,13 @@ namespace RayWongBlog.Api.Enxtensions
 
         public static IServiceCollection AddMiddleware(this IServiceCollection services)
         {
-            services.AddMvc()
+            services.AddMvc(
+                options =>
+                {
+                    options.ReturnHttpNotAcceptable = true;//启用内容协商,效果是请求头里添加的需要的返回类型,如果服务端不支持,就会返回406,例如API消费者请求的是application/xml格式的media type，而API只支持application/json
+
+                    options.OutputFormatters.Add(new XmlDataContractSerializerOutputFormatter());//比如客户端请求Accept,application/xml,增加输出格式的支持
+                })
                 .SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
             services.AddHttpsRedirection(options =>
             {

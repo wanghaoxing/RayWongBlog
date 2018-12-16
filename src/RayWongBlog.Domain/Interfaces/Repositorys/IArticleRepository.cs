@@ -8,9 +8,11 @@ namespace RayWongBlog.Domain.Interfaces.Repositorys
 {
    public interface IArticleRepository
     {
-        Task<IEnumerable<Article>> GetAllArticles();
+        Task<IEnumerable<Article>> GetAllArticlesAsync();
 
-        Task AddArtice(Article article);
+        Task AddArticeAsync(Article article);
+
+        Task<Article> GetArticleByIdAsync(int id);
 
     }
 }
