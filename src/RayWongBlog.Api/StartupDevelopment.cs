@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -35,9 +36,10 @@ namespace RayWongBlog.Api
             });
             services.AddScoped<IArticleRepository, ArticleRepository>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
+            services.AddAutoMapper();
         }
 
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env,ILoggerFactory loggerFactory)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
         {
             app.UseExceptionHandle(loggerFactory);
             app.UseHttpsRedirection();

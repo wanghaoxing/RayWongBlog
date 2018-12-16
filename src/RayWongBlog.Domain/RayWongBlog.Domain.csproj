@@ -6,7 +6,6 @@
 
   <ItemGroup>
     <Folder Include="Interfaces\Supervisors\" />
-    <Folder Include="Models\ViewModels\" />
     <Folder Include="Supervisors\" />
   </ItemGroup>
 

@@ -1,8 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using RayWongBlog.Domain.Interfaces.Repositorys;
 using RayWongBlog.Domain.Models.Entitys;
+using RayWongBlog.Domain.Models.ViewModels;
 using RayWongBlog.Infrastructure.DataBase;
 using System;
 using System.Collections.Generic;
@@ -18,15 +20,18 @@ namespace RayWongBlog.Api.Controllers
         private readonly IArticleRepository _articleRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<ArticleContrller> _logger;
+        private readonly IMapper _mapper;
 
         public ArticleContrller(IArticleRepository articleRepository,
             IUnitOfWork unitOfWork,
-            ILogger<ArticleContrller> logger
+            ILogger<ArticleContrller> logger,
+            IMapper mapper
             )
         {
             _articleRepository = articleRepository;
             _unitOfWork = unitOfWork;
             _logger = logger;
+            _mapper = mapper;
         }
         [HttpGet]
         public async Task<IActionResult> Get()
@@ -34,7 +39,8 @@ namespace RayWongBlog.Api.Controllers
             var list = await _articleRepository.GetAllArticles();
             //_logger.LogInformation("test");
             //throw new Exception("fsf");
-            return Ok(list);
+            var viewList = _mapper.Map<IEnumerable<Article>, IEnumerable<ArticleViewModel>>(list);
+            return Ok(viewList);
         }
 
         [HttpPost]
