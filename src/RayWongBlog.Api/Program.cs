@@ -10,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using RayWongBlog.Infrastructure.DataBase;
+using Serilog;
 
 namespace RayWongBlog.Api
 {
@@ -18,7 +19,11 @@ namespace RayWongBlog.Api
         public static void Main(string[] args)
         {
             var host = CreateWebHostBuilder(args).Build();
-            using(var scope = host.Services.CreateScope())
+            Log.Logger = new LoggerConfiguration()
+                            .WriteTo.Console()
+                            .WriteTo.Seq("http://localhost:5341")
+                            .CreateLogger();
+            using (var scope = host.Services.CreateScope())
             {
                 var service = scope.ServiceProvider;
                 var loggerFactory = service.GetRequiredService<ILoggerFactory>();
@@ -42,7 +47,12 @@ namespace RayWongBlog.Api
             var assemblyName = typeof(Startup).GetTypeInfo().Assembly.FullName;
 
             return WebHost.CreateDefaultBuilder(args)
-            .UseStartup(assemblyName);
+            .UseStartup(assemblyName)
+            .UseSerilog();
+            //怎么屏蔽不掉默认的输出提供程序
+            //.ConfigureLogging((context, logging) =>
+            //{
+            //});
 
         }
 

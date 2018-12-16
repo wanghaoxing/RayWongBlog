@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using RayWongBlog.Domain.Interfaces.Repositorys;
 using RayWongBlog.Domain.Models.Entitys;
 using RayWongBlog.Infrastructure.DataBase;
@@ -16,17 +17,23 @@ namespace RayWongBlog.Api.Controllers
     {
         private readonly IArticleRepository _articleRepository;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly ILogger<ArticleContrller> _logger;
 
         public ArticleContrller(IArticleRepository articleRepository,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            ILogger<ArticleContrller> logger
+            )
         {
             _articleRepository = articleRepository;
             _unitOfWork = unitOfWork;
+            _logger = logger;
         }
         [HttpGet]
         public async Task<IActionResult> Get()
         {
             var list = await _articleRepository.GetAllArticles();
+            //_logger.LogInformation("test");
+            //throw new Exception("fsf");
             return Ok(list);
         }
 

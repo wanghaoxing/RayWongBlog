@@ -1,8 +1,11 @@
 ﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using RayWongBlog.Api.Enxtensions;
 using RayWongBlog.Domain.Interfaces.Repositorys;
 using RayWongBlog.Infrastructure.DataBase;
@@ -22,7 +25,10 @@ namespace RayWongBlog.Api
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMiddleware();
-            var connection = "Data Source=RayWongBlog.db";
+            //标准写法
+            //var connection = Configuration["ConnectionStrings:DefaultConnection"];
+            //简化写法
+            var connection = Configuration.GetConnectionString("DefaultConnection");
             services.AddDbContext<BlogContext>(options =>
             {
                 options.UseSqlite(connection);
@@ -31,9 +37,9 @@ namespace RayWongBlog.Api
             services.AddScoped<IUnitOfWork, UnitOfWork>();
         }
 
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env,ILoggerFactory loggerFactory)
         {
-
+            app.UseExceptionHandle(loggerFactory);
             app.UseHttpsRedirection();
             app.UseMvc();
         }
