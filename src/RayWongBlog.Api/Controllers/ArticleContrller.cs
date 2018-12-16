@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using RayWongBlog.Domain.Interfaces.Repositorys;
 using RayWongBlog.Domain.Models.Entitys;
 using RayWongBlog.Domain.Models.ViewModels;
@@ -34,11 +36,24 @@ namespace RayWongBlog.Api.Controllers
             _mapper = mapper;
         }
         [HttpGet]
-        public async Task<IActionResult> Get()
+        public async Task<IActionResult> Get([FromQuery]ArticleParameters request)
         {
-            var list = await _articleRepository.GetAllArticlesAsync();
+            var list = await _articleRepository.GetAllArticlesAsync(request);
+            var metadata = new
+            {
+                PageSize=list.PageSize,
+                PageIndex=list.PageIndex,
+                TotalCount=list.TotalCount,
+                PageCount=list.PageCount,
+                //list.GetHasPrevious
+            };
             //_logger.LogInformation("test");
             //throw new Exception("fsf");
+
+            Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(metadata, new JsonSerializerSettings
+            {
+                ContractResolver = new CamelCasePropertyNamesContractResolver()
+            } ));//序列化时候变成驼峰规范
             var viewList = _mapper.Map<IEnumerable<Article>, IEnumerable<ArticleViewModel>>(list);
             return Ok(viewList);
         }
