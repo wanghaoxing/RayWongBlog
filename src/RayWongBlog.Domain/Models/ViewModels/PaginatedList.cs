@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace RayWongBlog.Domain.Models.ViewModels
 {
-    public class PaginatedList<T>:List<T> where T:class
+    public class PaginatedList<T> : List<T> where T : class
     {
         public int PageSize { get; set; }
 
@@ -19,17 +19,25 @@ namespace RayWongBlog.Domain.Models.ViewModels
             }
         }
 
-        public bool GetHasPrevious()
+        public bool GetHasPrevious
         {
-            return PageIndex > 0;
+            get
+            {
+                return PageIndex > 0;
+            }
+
         }
 
-        public bool GetHasNext()
+        public bool GetHasNext
         {
-            return PageIndex < PageCount - 1;
+            get
+            {
+                return PageIndex < PageCount - 1;
+            }
+
         }
 
-        public PaginatedList(int pageIndex,int pageSize,int totalCount,IEnumerable<T> data)
+        public PaginatedList(int pageIndex, int pageSize, int totalCount, IEnumerable<T> data)
         {
             PageIndex = pageIndex;
             PageSize = pageSize;

@@ -3,6 +3,9 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -37,6 +40,14 @@ namespace RayWongBlog.Api
             services.AddScoped<IArticleRepository, ArticleRepository>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddAutoMapper();
+
+            //生成前一页下一页链接需要用到的,就是这样写
+            services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
+            services.AddScoped<IUrlHelper>(factory =>
+            {
+                var actionContext = factory.GetService<IActionContextAccessor>().ActionContext;
+                return new UrlHelper(actionContext);
+            });
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
