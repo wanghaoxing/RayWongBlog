@@ -14,6 +14,7 @@ using RayWongBlog.Api.Enxtensions;
 using RayWongBlog.Domain.Interfaces.Repositorys;
 using RayWongBlog.Infrastructure.DataBase;
 using RayWongBlog.Infrastructure.Repositorys;
+using RayWongBlog.Infrastructure.Services;
 
 namespace RayWongBlog.Api
 {
@@ -48,6 +49,9 @@ namespace RayWongBlog.Api
                 var actionContext = factory.GetService<IActionContextAccessor>().ActionContext;
                 return new UrlHelper(actionContext);
             });
+            var propertyMappingContainer = new PropertyMappingContainer();
+            propertyMappingContainer.Register<ArticlePropertyMapping>();
+            services.AddSingleton<IPropertyMappingContainer>(propertyMappingContainer);
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
