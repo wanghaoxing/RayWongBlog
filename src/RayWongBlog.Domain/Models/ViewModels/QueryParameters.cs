@@ -11,5 +11,7 @@ namespace RayWongBlog.Domain.Models.ViewModels
 
         public int PageSize { get; set; } = 20;
         public string OrderBy { get; set; } = nameof(Entity.Id);
+
+        public string Fields { get; set; }
     }
 }

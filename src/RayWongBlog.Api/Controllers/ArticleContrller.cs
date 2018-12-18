@@ -9,6 +9,7 @@ using RayWongBlog.Domain.Models.Entitys;
 using RayWongBlog.Domain.Models.ViewModels;
 using RayWongBlog.Domain.Models.ViewModels.Enums;
 using RayWongBlog.Infrastructure.DataBase;
+using RayWongBlog.Infrastructure.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -63,7 +64,8 @@ namespace RayWongBlog.Api.Controllers
                 ContractResolver = new CamelCasePropertyNamesContractResolver()
             }));//序列化时候变成驼峰规范
             var viewList = _mapper.Map<IEnumerable<Article>, IEnumerable<ArticleViewModel>>(list);
-            return Ok(viewList);
+            var result = viewList.ToDynamicIEnumerable(request.Fields);
+            return Ok(result);
         }
 
         [HttpGet("{id}")]

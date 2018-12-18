@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json.Serialization;
 
 namespace RayWongBlog.Api.Enxtensions
 {
@@ -22,7 +23,11 @@ namespace RayWongBlog.Api.Enxtensions
 
                     options.OutputFormatters.Add(new XmlDataContractSerializerOutputFormatter());//比如客户端请求Accept,application/xml,增加输出格式的支持
                 })
-                .SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
+                .SetCompatibilityVersion(CompatibilityVersion.Version_2_1)
+                .AddJsonOptions(options=>
+                {
+                    options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+                });
             services.AddHttpsRedirection(options =>
             {
 
