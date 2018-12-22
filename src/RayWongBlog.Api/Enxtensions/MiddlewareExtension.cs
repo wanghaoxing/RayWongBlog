@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -28,11 +29,20 @@ namespace RayWongBlog.Api.Enxtensions
                         outFormats.SupportedMediaTypes.Add("application/vnd.raywongblog.hateoas+json");
 
                     }
+                    var inFormats = options.InputFormatters.OfType<JsonInputFormatter>().FirstOrDefault();
+                    if (inFormats != null)
+                    {
+                        inFormats.SupportedMediaTypes.Add("application/vnd.raywongblog.article.create+json");
+
+                    }
                 })
-                .SetCompatibilityVersion(CompatibilityVersion.Version_2_1)
                 .AddJsonOptions(options =>
                 {
                     options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+                }).AddFluentValidation(fv =>
+                {
+                //    fv.RunDefaultMvcValidationAfterFluentValidationExecutes = false;
+                //    fv.
                 });
             services.AddHttpsRedirection(options =>
             {

@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using FluentValidation;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Hosting;
@@ -12,7 +13,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using RayWongBlog.Api.Enxtensions;
 using RayWongBlog.Domain.Interfaces.Repositorys;
+using RayWongBlog.Domain.Models.ViewModels;
 using RayWongBlog.Infrastructure.DataBase;
+using RayWongBlog.Infrastructure.DataBase.Validators;
 using RayWongBlog.Infrastructure.Repositorys;
 using RayWongBlog.Infrastructure.Services;
 
@@ -52,6 +55,7 @@ namespace RayWongBlog.Api
             var propertyMappingContainer = new PropertyMappingContainer();
             propertyMappingContainer.Register<ArticlePropertyMapping>();
             services.AddSingleton<IPropertyMappingContainer>(propertyMappingContainer);
+            services.AddTransient<IValidator<ArticleAddViewModel>, ArticleValidator>();
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)

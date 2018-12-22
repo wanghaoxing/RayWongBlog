@@ -43,7 +43,7 @@ namespace RayWongBlog.Api.Controllers
         }
         [HttpGet(Name = "GetArticles")]
         [RequestHeaderMatchingMediaType("Accept", new[] { "application/vnd.raywongblog.hateoas+json" })]
-        public async Task<IActionResult> Get([FromQuery]ArticleParameters request,[FromHeader(Name ="Accept")] string mediaType)
+        public async Task<IActionResult> Get([FromQuery]ArticleParameters request, [FromHeader(Name = "Accept")] string mediaType)
         {
             var list = await _articleRepository.GetAllArticlesAsync(request);
             var previoustlink = list.GetHasPrevious ? CreateUri(request, PaginationUriType.PreviousPage) : null;
@@ -77,7 +77,7 @@ namespace RayWongBlog.Api.Controllers
             var links = CreateLinks(request, list.GetHasPrevious, list.GetHasNext);
             return Ok(new
             {
-                value=shapedLinks,
+                value = shapedLinks,
                 links
             });
         }
@@ -93,24 +93,36 @@ namespace RayWongBlog.Api.Controllers
             var articleViewModel = _mapper.Map<Article, ArticleViewModel>(article);
             var shaped = articleViewModel.ToDynamic(fields);
             var links = CreateLinks(id, fields);
-            var result=shaped as IDictionary<string,object>;
+            var result = shaped as IDictionary<string, object>;
             result.Add("links", links);
             return Ok(result);
         }
-        [HttpPost]
-        public async Task<IActionResult> Post()
+        [HttpPost(Name = "CreateArticle")]
+        [RequestHeaderMatchingMediaType("Content-Type", new[] { "application/vnd.raywongblog.article.create+json" })]
+        [RequestHeaderMatchingMediaType("Accept", new[] { "application/vnd.raywongblog.hateoas+json" })]
+        public async Task<IActionResult> Post(ArticleAddViewModel request)
         {
-            await _articleRepository.AddArticeAsync(new Article
+            if (request == null)
             {
-                Author = "admin",
-                Content = "test",
-                Title = "test title",
-                Createdtime = DateTime.Now,
-                LastModified = DateTime.Now
-
-            });
-            await _unitOfWork.SaveAsync();
-            return Ok();
+                return BadRequest();
+            }
+            if (!ModelState.IsValid)
+            {
+                return new MyUnprocessableEntityObjectResult(ModelState);
+            }
+            var article = _mapper.Map<ArticleAddViewModel, Article>(request);
+            article.LastModified = DateTime.Now;
+            article.Createdtime = DateTime.Now;
+            await _articleRepository.AddArticeAsync(article);
+            if (!await _unitOfWork.SaveAsync())
+            {
+                throw new Exception("Save Faild!");
+            }
+            var viewModel = _mapper.Map<Article, ArticleAddViewModel>(article);
+            var links = CreateLinks(article.Id);
+            var dic = viewModel.ToDynamic() as IDictionary<string, object>;
+            dic.Add("links", links);
+            return CreatedAtRoute("GetArticle", new { id = article.Id }, dic);
         }
 
         private string CreateUri(ArticleParameters parameters, PaginationUriType uriType)

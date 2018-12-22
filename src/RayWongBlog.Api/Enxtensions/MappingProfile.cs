@@ -16,6 +16,7 @@ namespace RayWongBlog.Api.Enxtensions
                 .ForMember(dest => dest.LastModifiedTime, opt => opt.MapFrom(src => src.LastModified));
             
             CreateMap<ArticleViewModel, Article>();
+            CreateMap<ArticleAddViewModel, Article>();
         }
     }
 }
