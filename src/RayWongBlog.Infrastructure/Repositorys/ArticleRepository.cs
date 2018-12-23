@@ -47,6 +47,16 @@ namespace RayWongBlog.Infrastructure.Repositorys
         {
             return await _context.Articles.FindAsync(id);
         }
+
+        public void  Delete(Article article)
+        {
+             _context.Articles.Remove(article);
+        }
+
+        public void Update(Article article)
+        {
+            _context.Entry(article).State = EntityState.Modified;
+        }
     }
 }
 

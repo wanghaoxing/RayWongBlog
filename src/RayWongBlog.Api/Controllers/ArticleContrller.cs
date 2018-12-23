@@ -15,6 +15,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.JsonPatch;
+using Microsoft.AspNetCore.Mvc.Filters;
 
 namespace RayWongBlog.Api.Controllers
 {
@@ -124,7 +126,85 @@ namespace RayWongBlog.Api.Controllers
             dic.Add("links", links);
             return CreatedAtRoute("GetArticle", new { id = article.Id }, dic);
         }
+        [HttpDelete("{id}", Name = "DeleteArticle")]
+        public async Task<IActionResult> DeleteArticle(int id)
+        {
+            var article = await _articleRepository.GetArticleByIdAsync(id);
+            if (article == null)
+            {
+                return NotFound();
+            }
+            _articleRepository.Delete(article);
+            if (!await _unitOfWork.SaveAsync())
+            {
+                throw new Exception($"Faild");
+            }
 
+            return NoContent();
+        }
+        [HttpPut("{id}",Name = "UpdateArticle")]
+        [RequestHeaderMatchingMediaType("Content-Type", new[] { "application/vnd.raywongblog.article.update+json" })]
+        public async Task<IActionResult> Update(int id, [FromBody] ArticleUpdateViewModel request)
+        {
+            if (request == null)
+            {
+                return BadRequest();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return  new MyUnprocessableEntityObjectResult(ModelState);
+            }
+
+            var article = await _articleRepository.GetArticleByIdAsync(id);
+            if (article == null)
+            {
+                return NotFound();
+            }
+            article.LastModified=DateTime.Now;
+            _mapper.Map(request, article);
+            if (!await _unitOfWork.SaveAsync())
+            {
+                throw new Exception("Faild");
+            }
+
+            return NoContent();
+        }
+
+        [HttpPatch("{id}",Name = "PartiallyUpdateArticle")]
+        public async Task<IActionResult> PartiallyUpdate(int id,
+            [FromBody] JsonPatchDocument<ArticleUpdateViewModel> request)
+        {
+            if (request == null)
+            {
+                return BadRequest();
+
+            }
+
+            var article = await _articleRepository.GetArticleByIdAsync(id);
+            if (article == null)
+            {
+                return NotFound();
+            }
+
+            var patch = _mapper.Map<ArticleUpdateViewModel>(article);
+            request.ApplyTo(patch, ModelState);
+            TryValidateModel(patch);
+            if (!ModelState.IsValid)
+            {
+                return  new MyUnprocessableEntityObjectResult(ModelState);
+            }
+
+            _mapper.Map(patch, article);
+            article.LastModified=DateTime.Now;
+            _articleRepository.Update(article);
+            if (!await _unitOfWork.SaveAsync())
+            {
+                throw new Exception("Faild");
+            }
+
+            return NoContent();
+        }
         private string CreateUri(ArticleParameters parameters, PaginationUriType uriType)
         {
             switch (uriType)

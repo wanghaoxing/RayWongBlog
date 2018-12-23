@@ -55,7 +55,8 @@ namespace RayWongBlog.Api
             var propertyMappingContainer = new PropertyMappingContainer();
             propertyMappingContainer.Register<ArticlePropertyMapping>();
             services.AddSingleton<IPropertyMappingContainer>(propertyMappingContainer);
-            services.AddTransient<IValidator<ArticleAddViewModel>, ArticleValidator>();
+            services.AddTransient<IValidator<ArticleAddViewModel>, ArticleValidator<ArticleAddViewModel>>();
+            services.AddTransient<IValidator<ArticleUpdateViewModel>, ArticleValidator<ArticleUpdateViewModel>>();
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)

@@ -6,7 +6,7 @@ using System.Text;
 
 namespace RayWongBlog.Infrastructure.DataBase.Validators
 {
-    public class ArticleValidator : AbstractValidator<ArticleAddViewModel>
+    public class ArticleValidator<T> : AbstractValidator<T> where T:ArticleAddOrUpdateViewModel
     {
         public ArticleValidator()
         {

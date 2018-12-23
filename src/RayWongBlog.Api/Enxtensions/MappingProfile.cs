@@ -17,6 +17,7 @@ namespace RayWongBlog.Api.Enxtensions
             
             CreateMap<ArticleViewModel, Article>();
             CreateMap<ArticleAddViewModel, Article>();
+            CreateMap<ArticleUpdateViewModel, Article>();
         }
     }
 }

@@ -4,8 +4,7 @@ using System.Text;
 
 namespace RayWongBlog.Domain.Models.ViewModels
 {
-   public  class ArticleAddViewModel:ArticleAddOrUpdateViewModel
+   public  class ArticleUpdateViewModel:ArticleAddOrUpdateViewModel
     {
-
     }
 }
