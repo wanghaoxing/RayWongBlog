@@ -14,6 +14,7 @@ namespace RayWongBlog.Domain.Interfaces.Repositorys
         Task AddArticeAsync(Article article);
 
         Task<Article> GetArticleByIdAsync(int id);
-
+        void Delete(Article article);
+        void Update(Article article);
     }
 }

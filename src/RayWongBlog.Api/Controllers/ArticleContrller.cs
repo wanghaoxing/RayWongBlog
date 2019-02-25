@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using RayWongBlog.Api.Helpers;
 using RayWongBlog.Domain.Interfaces.Repositorys;
 using RayWongBlog.Domain.Models.Entitys;
 using RayWongBlog.Domain.Models.ViewModels;
@@ -14,6 +15,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.JsonPatch;
+using Microsoft.AspNetCore.Mvc.Filters;
 
 namespace RayWongBlog.Api.Controllers
 {
@@ -40,8 +43,9 @@ namespace RayWongBlog.Api.Controllers
             _mapper = mapper;
             _urlHelper = urlHelper;
         }
-        [HttpGet(Name ="GetArticles")]
-        public async Task<IActionResult> Get([FromQuery]ArticleParameters request)
+        [HttpGet(Name = "GetArticles")]
+        [RequestHeaderMatchingMediaType("Accept", new[] { "application/vnd.raywongblog.hateoas+json" })]
+        public async Task<IActionResult> Get([FromQuery]ArticleParameters request, [FromHeader(Name = "Accept")] string mediaType)
         {
             var list = await _articleRepository.GetAllArticlesAsync(request);
             var previoustlink = list.GetHasPrevious ? CreateUri(request, PaginationUriType.PreviousPage) : null;
@@ -51,8 +55,8 @@ namespace RayWongBlog.Api.Controllers
                 PageSize = list.PageSize,
                 PageIndex = list.PageIndex,
                 TotalCount = list.TotalCount,
-                PageCount = list.PageCount,           
-                Previoustlink=previoustlink,
+                PageCount = list.PageCount,
+                Previoustlink = previoustlink,
                 Nextlink = nextlink,
                 //list.GetHasPrevious
             };
@@ -64,12 +68,24 @@ namespace RayWongBlog.Api.Controllers
                 ContractResolver = new CamelCasePropertyNamesContractResolver()
             }));//序列化时候变成驼峰规范
             var viewList = _mapper.Map<IEnumerable<Article>, IEnumerable<ArticleViewModel>>(list);
-            var result = viewList.ToDynamicIEnumerable(request.Fields);
-            return Ok(result);
+            var shaped = viewList.ToDynamicIEnumerable(request.Fields);
+            var shapedLinks = shaped.Select(r =>
+              {
+                  var dic = r as IDictionary<string, object>;
+                  var articlelinks = CreateLinks((int)dic["Id"], request.Fields);
+                  dic.Add("links", articlelinks);
+                  return dic;
+              });
+            var links = CreateLinks(request, list.GetHasPrevious, list.GetHasNext);
+            return Ok(new
+            {
+                value = shapedLinks,
+                links
+            });
         }
 
-        [HttpGet("{id}")]
-        public async Task<IActionResult> Get(int id)
+        [HttpGet("{id}", Name = "GetArticle")]
+        public async Task<IActionResult> Get(int id, string fields)
         {
             var article = await _articleRepository.GetArticleByIdAsync(id);
             if (article == null)
@@ -77,24 +93,118 @@ namespace RayWongBlog.Api.Controllers
                 return NotFound();
             }
             var articleViewModel = _mapper.Map<Article, ArticleViewModel>(article);
-            return Ok(articleViewModel);
+            var shaped = articleViewModel.ToDynamic(fields);
+            var links = CreateLinks(id, fields);
+            var result = shaped as IDictionary<string, object>;
+            result.Add("links", links);
+            return Ok(result);
         }
-        [HttpPost]
-        public async Task<IActionResult> Post()
+        [HttpPost(Name = "CreateArticle")]
+        [RequestHeaderMatchingMediaType("Content-Type", new[] { "application/vnd.raywongblog.article.create+json" })]
+        [RequestHeaderMatchingMediaType("Accept", new[] { "application/vnd.raywongblog.hateoas+json" })]
+        public async Task<IActionResult> Post(ArticleAddViewModel request)
         {
-            await _articleRepository.AddArticeAsync(new Article
+            if (request == null)
             {
-                Author = "admin",
-                Content = "test",
-                Title = "test title",
-                Createdtime = DateTime.Now,
-                LastModified = DateTime.Now
+                return BadRequest();
+            }
+            if (!ModelState.IsValid)
+            {
+                return new MyUnprocessableEntityObjectResult(ModelState);
+            }
+            var article = _mapper.Map<ArticleAddViewModel, Article>(request);
+            article.LastModified = DateTime.Now;
+            article.Createdtime = DateTime.Now;
+            await _articleRepository.AddArticeAsync(article);
+            if (!await _unitOfWork.SaveAsync())
+            {
+                throw new Exception("Save Faild!");
+            }
+            var viewModel = _mapper.Map<Article, ArticleAddViewModel>(article);
+            var links = CreateLinks(article.Id);
+            var dic = viewModel.ToDynamic() as IDictionary<string, object>;
+            dic.Add("links", links);
+            return CreatedAtRoute("GetArticle", new { id = article.Id }, dic);
+        }
+        [HttpDelete("{id}", Name = "DeleteArticle")]
+        public async Task<IActionResult> DeleteArticle(int id)
+        {
+            var article = await _articleRepository.GetArticleByIdAsync(id);
+            if (article == null)
+            {
+                return NotFound();
+            }
+            _articleRepository.Delete(article);
+            if (!await _unitOfWork.SaveAsync())
+            {
+                throw new Exception($"Faild");
+            }
 
-            });
-            await _unitOfWork.SaveAsync();
-            return Ok();
+            return NoContent();
+        }
+        [HttpPut("{id}",Name = "UpdateArticle")]
+        [RequestHeaderMatchingMediaType("Content-Type", new[] { "application/vnd.raywongblog.article.update+json" })]
+        public async Task<IActionResult> Update(int id, [FromBody] ArticleUpdateViewModel request)
+        {
+            if (request == null)
+            {
+                return BadRequest();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return  new MyUnprocessableEntityObjectResult(ModelState);
+            }
+
+            var article = await _articleRepository.GetArticleByIdAsync(id);
+            if (article == null)
+            {
+                return NotFound();
+            }
+            article.LastModified=DateTime.Now;
+            _mapper.Map(request, article);
+            if (!await _unitOfWork.SaveAsync())
+            {
+                throw new Exception("Faild");
+            }
+
+            return NoContent();
         }
 
+        [HttpPatch("{id}",Name = "PartiallyUpdateArticle")]
+        public async Task<IActionResult> PartiallyUpdate(int id,
+            [FromBody] JsonPatchDocument<ArticleUpdateViewModel> request)
+        {
+            if (request == null)
+            {
+                return BadRequest();
+
+            }
+
+            var article = await _articleRepository.GetArticleByIdAsync(id);
+            if (article == null)
+            {
+                return NotFound();
+            }
+
+            var patch = _mapper.Map<ArticleUpdateViewModel>(article);
+            request.ApplyTo(patch, ModelState);
+            TryValidateModel(patch);
+            if (!ModelState.IsValid)
+            {
+                return  new MyUnprocessableEntityObjectResult(ModelState);
+            }
+
+            _mapper.Map(patch, article);
+            article.LastModified=DateTime.Now;
+            _articleRepository.Update(article);
+            if (!await _unitOfWork.SaveAsync())
+            {
+                throw new Exception("Faild");
+            }
+
+            return NoContent();
+        }
         private string CreateUri(ArticleParameters parameters, PaginationUriType uriType)
         {
             switch (uriType)
@@ -127,6 +237,55 @@ namespace RayWongBlog.Api.Controllers
                     };
                     return _urlHelper.Link("GetArticles", current);
             }
+        }
+
+        private IEnumerable<LinkResource> CreateLinks(int id, string fields = null)
+        {
+            var links = new List<LinkResource>();
+            if (string.IsNullOrWhiteSpace(fields))
+            {
+                links.Add(new LinkResource(
+                    _urlHelper.Link("GetArticle", new { id }), "self", "GET"));
+
+            }
+            else
+            {
+                links.Add(new LinkResource(
+                                    _urlHelper.Link("GetArticle", new { id, fields }), "self", "GET"));
+            }
+            links.Add(
+                new LinkResource(
+                    _urlHelper.Link("DeleteArticle", new { id }), "delete_article", "DELETE"));
+            return links;
+
+        }
+        private IEnumerable<LinkResource> CreateLinks(ArticleParameters request,
+     bool hasPrevious, bool hasNext)
+        {
+            var links = new List<LinkResource>
+            {
+                new LinkResource(
+                    CreateUri(request, PaginationUriType.CurrentPage),
+                    "self", "GET")
+            };
+
+            if (hasPrevious)
+            {
+                links.Add(
+                    new LinkResource(
+                        CreateUri(request, PaginationUriType.PreviousPage),
+                        "previous_page", "GET"));
+            }
+
+            if (hasNext)
+            {
+                links.Add(
+                    new LinkResource(
+                        CreateUri(request, PaginationUriType.NextPage),
+                        "next_page", "GET"));
+            }
+
+            return links;
         }
     }
 }
